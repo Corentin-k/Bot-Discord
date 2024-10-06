@@ -1,3 +1,5 @@
+This project is no longer up to date and may not work with the latest versions!!!
+
 # DISCORD BOT
 #### By [@Corentin-k](https://github.com/Corentin-k) and [@kevin-71](https://github.com/kevin-71).
 ----
