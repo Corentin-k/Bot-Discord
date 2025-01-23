@@ -48,6 +48,6 @@ export default {
         }
 
         // Réponse à l'interaction
-        await interaction.reply({ content: message,  flags: 0 });
+        await interaction.reply({ content: message,  flags: 64 });
     },
 };

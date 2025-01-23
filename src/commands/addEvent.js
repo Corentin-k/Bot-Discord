@@ -33,7 +33,7 @@ export default {
   ],
 
   runSlash: async (client, interaction) => {
-    await interaction.deferReply();
+    await interaction.deferReply({ flags:  64 });
 
     const userId = interaction.user.id;
     const textEvent = interaction.options.getString("evenement");
@@ -53,18 +53,18 @@ export default {
       // Insertion de l'événement
       const [result] = await connection.execute(
         `INSERT INTO events (user_id, dateEvent, heureEvent, textEvent) VALUES (?, ?, ?, ?)`,
-        [userId, dateInput, timeInput, textEvent]
+        [userId, date, timeInput, textEvent]
       );
 
       const eventId = result.insertId;
 
       // Planification du rappel
       
-      await scheduleReminder(client, userId, eventId, eventDate, timeInput, textEvent, channelId);
+      await scheduleReminder(client, userId, eventId, date, timeInput, textEvent, channelId,interaction.user.globalName);
 
       // Confirmation à l'utilisateur
       await interaction.editReply({
-        content: `Événement ajouté : "${textEvent}" prévu le ${dateInput} à ${timeInput}. Un rappel sera envoyé ici.`,
+        content: `Événement ajouté : "${textEvent}" prévu le ${date} à ${timeInput}. Un rappel sera envoyé ici.`,
       });
 
       connection.end();
@@ -72,6 +72,7 @@ export default {
       console.error(err);
       return interaction.editReply({
         content: "Une erreur est survenue lors de l'ajout de l'événement.",
+        
       });
     }
   },

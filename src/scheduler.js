@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import mysql from "mysql2/promise";
-import { TextChannel } from "discord.js";
+import { TextChannel, EmbedBuilder } from "discord.js";
 
 const dbConfig = {
   host: "localhost",
@@ -10,18 +10,43 @@ const dbConfig = {
 };
 
 // Fonction pour planifier un rappel
-export const scheduleReminder = async (client, userId, eventId, date, time, message, channelId) => {
+export const scheduleReminder = async (client, userId, eventId, date, time, message, channelId,globalName) => {
   const [hour, minute] = time.split(":").map(Number);
+  if (typeof date === "string") {
+    date = new Date(date);
+  }
+  if (isNaN(date.getTime())) {
+    console.error("Date invalide :", date);
+    return;
+  }
 
   // Calcul du cron expression
+  //https://www.npmjs.com/package/node-cron
+
   const cronExpression = `${minute} ${hour} ${date.getDate()} ${date.getMonth() + 1} *`;
+  console.log("Cron planifié :", cronExpression);
 
   // Planification du rappel
   cron.schedule(cronExpression, async () => {
     try {
       const channel = client.channels.cache.get(channelId);
       if (channel instanceof TextChannel) {
-        await channel.send(`<@${userId}> Rappel : ${message}`);
+        
+        //  Création de l'embed
+        const reminderEmbed = new EmbedBuilder()
+          .setColor("#FFA500") 
+          .setTitle("📅 Rappel d'Événement")
+          .setDescription(message)
+          .addFields(
+            { name: "📌 Date", value: date.toISOString().split("T")[0], inline: true },
+            { name: "🕒 Heure", value: time, inline: true }
+          )
+          .setFooter({ text: `Rappel programmé par <@${globalName}>` })
+          .setTimestamp();
+
+        // Envoi du message embed
+        await channel.send({ content: `@everyone`, embeds: [reminderEmbed],flag:64 });
+
         await markAsNotified(eventId);
       }
     } catch (err) {
