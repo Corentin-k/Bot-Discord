@@ -1,3 +1,5 @@
+Update 23/01/2025 TS--> Js and remove film and book commands
+
 # DISCORD BOT
 #### By [@Corentin-k](https://github.com/Corentin-k) and [@kevin-71](https://github.com/kevin-71).
 ----
