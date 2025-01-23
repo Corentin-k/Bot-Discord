@@ -1,1 +1,0 @@
-npx nodemon index.ts
