@@ -36,7 +36,17 @@ export default {
     },
   ],
   runSlash: async (client, interaction) => {
-    const isEphemeral = interaction.options.getString("ephemeral") === "true";
+    const isEphemeral = interaction.options.getString("ephemeral");
+
+    let statuts;
+    if (isEphemeral === "false") {
+      statuts = false;
+    } else {
+      statuts = true;
+    }
+    // Remplace l'usage de ephemeral par flags
+    await interaction.deferReply({ flags: statuts ? 64 : 0 });
+
     console.log(interaction.user);
     const nom = interaction.options.getString("name")?.toLowerCase() || interaction.user.id;
     const dateInput = interaction.options.getString("date") || "";
@@ -48,9 +58,8 @@ export default {
     }
     // Vérification de la date
     if (verifier_date(date) === "false") {
-      return interaction.reply({
+      return interaction.editReply({
         content: `${date} est une date invalide. Format attendu : AAAA-MM-JJ.`,
-        ephemeral: true,
       });
     }
 
@@ -60,25 +69,25 @@ export default {
       connection = await mysql.createConnection(dbConfig);
 
       // Recherche de l'URL associée au nom
-      const [rows] = await connection.execute("SELECT planning_url FROM user_plannings WHERE name = ?", [nom]);
+      const [rows] = await connection.execute("SELECT planning_url FROM user_plannings WHERE user_name = ?", [nom]);
 
       if (rows.length === 0) {
-        return interaction.reply({
+        return interaction.editReply({
           content: `Aucune URL de planning trouvée pour ${nom}. Veuillez vérifier le nom ou ajouter une URL avec /addPlanning.`,
-          ephemeral: true,
+         
         });
       }
-
-      const url = rows[0].url;
-
+      console.log(rows)
+      const url = rows[0].planning_url;
+      console.log(url)
       // Chargement de l'agenda depuis l'URL
       const agenda = await get_agenda(url);
       const coursDuJour = date_cours(agenda, date);
 
       if (coursDuJour.length === 0) {
-        return interaction.reply({
+        return interaction.editReply({
           content: `${nom} n'a pas de cours le ${date} 🎉`,
-          ephemeral: isEphemeral,
+  
         });
       }
 
@@ -93,17 +102,17 @@ export default {
       coursDuJour.forEach(({ nom_cours, salle, start, end }) => {
         embed.addFields(
           { name: nom_cours, value: salle, inline: true },
-          { name: "Horaires", value: `${moment(start).format("HH:mm")} - ${moment(end).format("HH:mm")}`, inline: true },
+          { name: "Horaires", value: `${moment(start, "HH:mm").format("HH:mm")} - ${ moment(end, "HH:mm").format("HH:mm")}`, inline: true },
           { name: "\u200B", value: "\u200B", inline: false }
         );
       });
 
-      await interaction.reply({ embeds: [embed], ephemeral: isEphemeral });
+      await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Erreur lors de l'accès à la base de données ou au planning :", error);
-      return interaction.reply({
+      return interaction.editReply({
         content: "Une erreur est survenue lors de la récupération du planning. Veuillez réessayer plus tard.",
-        ephemeral: true,
+      
       });
     } finally {
       if (connection) {

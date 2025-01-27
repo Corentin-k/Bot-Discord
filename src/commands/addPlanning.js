@@ -33,6 +33,10 @@ export default {
         try {
             // Connexion à la base de données
             const connection = await mysql.createConnection(dbConfig);
+            if (url.startsWith("webcal://")) {
+                url = url.replace("webcal://", "https://");
+            }
+
 
             // Vérifier si l'utilisateur a déjà un planning
             const [rows] = await connection.execute(
