@@ -52,7 +52,7 @@ export default {
                 );
                 await interaction.reply({
                     content: "Votre planning a été mis à jour avec succès !",
-                    ephemeral: true,
+                    flags: 64
                 });
             } else {
                 // Insérer un nouveau planning
@@ -62,7 +62,7 @@ export default {
                 );
                 await interaction.reply({
                     content: "Votre planning a été ajouté avec succès !",
-                    ephemeral: true,
+                    flags: 64
                 });
             }
 
@@ -72,7 +72,7 @@ export default {
             console.error("Erreur lors de la connexion à la base de données :", error);
             await interaction.reply({
                 content: "Une erreur est survenue lors de l'enregistrement de votre planning. Veuillez réessayer plus tard.",
-                ephemeral: true,
+                flags: 64
             });
         }
     },
