@@ -3,11 +3,10 @@ import chalk from "chalk";
 dotenv.config();
 
 import { Client, Collection } from "discord.js";
-import EventsHandlers from "./Utils/Handlers/EventsHandlers.js";
-import CommandsHandlers from "./Utils/Handlers/CommandsHandlers.js";
-// import setup from "./Models/Setup.js";  // Si nécessaire, ajoutez une exportation par défaut
+import EventsHandlers from "./Utils/Handlers/EventsHandlers.js";  
+import CommandsHandlers from "./Utils/Handlers/CommandsHandlers.js";  
 
-// Controle des librairies.
+
 const libraries = ["discord.js", "axios", "node-ical", "moment", "moment-timezone"];
 
 async function checkLibraries() {
@@ -26,12 +25,13 @@ async function checkLibraries() {
 
 //console.clear();
 //console.clear();
-//checkLibraries();
-// Partie Base de donnée
-// setup(); // Assurez-vous que le fichier setup utilise 'export default'
+checkLibraries();
 
 // Partie DiscordJS
 const client = new Client({ intents: 3243773 }); //131071 3243773 3276799
+client.on('debug', (info) => {
+    console.log(info);  // Affiche les messages de débogage
+  });
 client.commands = new Collection(); //permmettra de stocker l'ensemble des commandes
 
 process.on(`exit`, (code) => { console.log(`le processus s'est arreté avec le code ${code} !`) });

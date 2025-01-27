@@ -1,9 +1,16 @@
-import { EmbedBuilder } from 'discord.js';
-import { get_agenda, transfo_date, date_cours, verifier_date } from "../agenda.js";
-import moment from "moment";
+import { EmbedBuilder } from "discord.js";
 
-// Cache pour stocker les agendas des personnes pour éviter de faire des requêtes inutiles à chaque fois que la commande est utilisée
-const agendasCache = {};
+import { get_agenda, transfo_date, date_cours, verifier_date } from "file:///C:/Users/ckerv/Documents/GitHub/Bot/Version-TS-Git/src/agenda.js";
+import moment from "moment";
+import mysql from "mysql2/promise";
+
+// Configuration de la base de données
+const dbConfig = {
+  host: "localhost",
+  user: "root",
+  password: process.env.DB_PWD,
+  database: process.env.DB_NAME,
+};
 
 export default {
   name: "planning",
@@ -11,8 +18,8 @@ export default {
   options: [
     {
       name: "name",
-      description: "Nom de la personne",
-      required: true,
+      description: "Nom de la personne, par défaut le vôtre",
+      required: false,
       type: 3,
     },
     {
@@ -29,131 +36,79 @@ export default {
     },
   ],
   runSlash: async (client, interaction) => {
-    let isephemeral = interaction.options.getString("ephemeral");
-    let statuts;
-    if (isephemeral === "false") {
-      statuts = false;
-    } else {
-      statuts = true;
-    }
-    // Remplace l'usage de ephemeral par flags
-    await interaction.deferReply({ flags: statuts ? 64 : 0 });
-
-    // Récupère les valeurs des options 'name' et 'date' depuis l'interaction
-    let NOM = interaction.options.getString("name");
-    let DATE = interaction.options.getString("date") ?? "";
-
-    NOM = NOM.toLowerCase();
-
-    // Vérifie si l'interaction se déroule dans un canal spécifique
+    const isEphemeral = interaction.options.getString("ephemeral") === "true";
+    console.log(user);
+    const nom = interaction.options.getString("name")?.toLowerCase() || interaction.user.id;
+    const dateInput = interaction.options.getString("date") || "";
+    const date = transfo_date(dateInput);
     if (!interaction.channel || interaction.channelId !== process.env.BOT_PLANNING_CHANNEL) {
       return interaction.editReply({
         content: "Vous ne pouvez pas utiliser cette commande dans ce salon !",
       });
     }
-    console.log(NOM);
-
-    if (NOM !== "corentin" && NOM !== "maxime" && NOM !== "kevin") {
-      return interaction.editReply({
-        content: "Vous devez entrer le nom d'une personne !",
+    // Vérification de la date
+    if (verifier_date(date) === "false") {
+      return interaction.reply({
+        content: `${date} est une date invalide. Format attendu : AAAA-MM-JJ.`,
+        ephemeral: true,
       });
     }
 
-    // Récupère l'url associé au nom
-    let url;
-    if (NOM === "maxime") {
-      url = process.env.MAXIME;
-    } else if (NOM === "corentin") {
-      url = process.env.CORENTIN;
-    } else if (NOM === "kevin") {
-      url = process.env.KEVIN;
-    } else {
-      const message = "Syntaxe invalide. Le prénom est incorrect.";
-      return interaction.editReply({ content: message });
-    }
+    // Connexion à la base de données
+    let connection;
+    try {
+      connection = await mysql.createConnection(dbConfig);
 
-    console.log(url);
-    if (!url) {
-      const message = "URL non définie";
-      return interaction.editReply({
-        content: message,
-      });
-    }
+      // Recherche de l'URL associée au nom
+      const [rows] = await connection.execute("SELECT url FROM user_plannings WHERE name = ?", [nom]);
 
-    // Modifie la date
-    DATE = transfo_date(DATE); // si la date est de type vide, today, tomorrow ou JJ et la transforme en AAAA-MM-JJ
-
-    // Sinon on vérifie que la date donnée est bien dans le format AAAA-MM-JJ.
-    let verif_date = verifier_date(DATE);
-
-    if (verif_date === "false") {
-      const message = `${DATE} Veuillez insérer une date valide. Format : AAAA-MM-JJ`;
-
-      console.log(`date invalide entrée ${DATE}`);
-
-      return interaction.editReply({
-        content: message,
-      });
-    }
-
-    console.log(DATE);
-
-    let cal;
-    // Vérifie si l'agenda est en cache
-    if (agendasCache[NOM] && agendasCache[NOM].hasOwnProperty(DATE)) {
-      cal = agendasCache[NOM][DATE];
-    } else {
-      // Sinon on récupère l'agenda
-      cal = await get_agenda(url);
-
-      // Et on stocke l'agenda dans le cache
-      if (!agendasCache[NOM]) {
-        agendasCache[NOM] = {};
+      if (rows.length === 0) {
+        return interaction.reply({
+          content: `Aucune URL de planning trouvée pour ${nom}. Veuillez vérifier le nom ou ajouter une URL avec /addPlanning.`,
+          ephemeral: true,
+        });
       }
-      agendasCache[NOM][DATE] = cal;
-    }
-    const liste_cours = date_cours(cal, DATE);
 
-    // Mise en forme de l'affichage
+      const url = rows[0].url;
 
-    if (liste_cours.length === 0) {
-      const message = `${NOM} n'a pas de cours le ${DATE} 🎉`;
-      console.log(message);
+      // Chargement de l'agenda depuis l'URL
+      const agenda = await get_agenda(url);
+      const coursDuJour = date_cours(agenda, date);
 
-      return interaction.editReply({
-        content: message,
+      if (coursDuJour.length === 0) {
+        return interaction.reply({
+          content: `${nom} n'a pas de cours le ${date} 🎉`,
+          ephemeral: isEphemeral,
+        });
+      }
+
+      // Création de l'embed
+      const embed = new EmbedBuilder()
+        .setTitle(`Cours de ${nom}`)
+        .setDescription(`__Voici vos cours du ${date} :__\n`)
+        .setColor(0x00bfff)
+        .setFooter({ text: `Total de ${coursDuJour.length} cours pour le ${date}` })
+        .setThumbnail("https://www.efrei.fr/wp-content/uploads/2022/01/LOGO_EFREI-PRINT_EFREI-WEB.png");
+
+      coursDuJour.forEach(({ nom_cours, salle, start, end }) => {
+        embed.addFields(
+          { name: nom_cours, value: salle, inline: true },
+          { name: "Horaires", value: `${moment(start).format("HH:mm")} - ${moment(end).format("HH:mm")}`, inline: true },
+          { name: "\u200B", value: "\u200B", inline: false }
+        );
       });
+
+      await interaction.reply({ embeds: [embed], ephemeral: isEphemeral });
+    } catch (error) {
+      console.error("Erreur lors de l'accès à la base de données ou au planning :", error);
+      return interaction.reply({
+        content: "Une erreur est survenue lors de la récupération du planning. Veuillez réessayer plus tard.",
+        ephemeral: true,
+      });
+    } finally {
+      if (connection) {
+        await connection.end();
+      }
     }
-
-    // Création de l'embed avec EmbedBuilder
-    const affichage = new EmbedBuilder();
-    affichage.setTitle(`Cours de ${NOM}`);
-    affichage.setDescription(`__Voici vos cours du ${DATE} :__\n`);
-    affichage.setColor(0x00bfff);
-
-    for (const cours of liste_cours) {
-      const { nom_cours, salle, start, end } = cours;
-      const debut = moment(start, "HH:mm").format("HH:mm");
-      const fin = moment(end, "HH:mm").format("HH:mm");
-
-      affichage.addFields(
-        { name: nom_cours, value: salle, inline: true },
-        { name: "Horaires", value: `${debut} / ${fin}`, inline: true },
-        { name: "\u200B", value: "\u200B", inline: false }
-      );
-    }
-
-    affichage.setAuthor({
-      name: interaction.user.username,
-      iconURL: interaction.user.avatarURL() ?? undefined,
-    });
-
-    affichage.setThumbnail(
-      "https://www.efrei.fr/wp-content/uploads/2022/01/LOGO_EFREI-PRINT_EFREI-WEB.png"
-    );
-    console.log(liste_cours.length);
-    affichage.setFooter({ text: `Vous avez un total de ${liste_cours.length} cours le ${DATE}` });
-
-    await interaction.editReply({ embeds: [affichage] });
   },
 };

@@ -20,7 +20,7 @@ export default {
             message += 
                 "**/planning** : permet de récupérer le planing d'une personne. \n\n" +
                 "**/addPlanning** : ajouter son planning à la commande"
-                "**/addEvent** : ajouter un évenement"
+                "**/addEvent** : ajouter un évenement et le programmer pour qu'il envoie un ping le jour j + un ping sans everyone une semaine avant ou cinq"
                 "Tapez /help + nom de la commande pour en savoir plus"                
         } else {
             switch (name_command){
