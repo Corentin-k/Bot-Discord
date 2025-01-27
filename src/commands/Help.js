@@ -14,7 +14,7 @@ export default {
     
     runSlash: async (client, interaction) => {
         let message = "";
-        message += "Bot créé en 2023 par Crobot'ic. Voici la liste des différentes commandes de ce BOT :\n\n"
+        message += "Bot créé en 2023 par Corentin K. Voici la liste des différentes commandes de ce BOT :\n\n"
         const name_command = interaction.options.getString("name_command");
         if (!name_command) {
             message += 

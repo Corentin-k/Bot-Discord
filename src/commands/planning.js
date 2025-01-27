@@ -1,6 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 
-import { get_agenda, transfo_date, date_cours, verifier_date } from "file:///C:/Users/ckerv/Documents/GitHub/Bot/Version-TS-Git/src/agenda.js";
+import { get_agenda, transfo_date, date_cours, verifier_date } from "../agenda.js";
 import moment from "moment";
 import mysql from "mysql2/promise";
 
@@ -37,7 +37,7 @@ export default {
   ],
   runSlash: async (client, interaction) => {
     const isEphemeral = interaction.options.getString("ephemeral") === "true";
-    console.log(user);
+    console.log(interaction.user);
     const nom = interaction.options.getString("name")?.toLowerCase() || interaction.user.id;
     const dateInput = interaction.options.getString("date") || "";
     const date = transfo_date(dateInput);
@@ -60,7 +60,7 @@ export default {
       connection = await mysql.createConnection(dbConfig);
 
       // Recherche de l'URL associée au nom
-      const [rows] = await connection.execute("SELECT url FROM user_plannings WHERE name = ?", [nom]);
+      const [rows] = await connection.execute("SELECT planning_url FROM user_plannings WHERE name = ?", [nom]);
 
       if (rows.length === 0) {
         return interaction.reply({
