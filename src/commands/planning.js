@@ -7,7 +7,7 @@ import mysql from "mysql2/promise";
 // Configuration de la base de données
 const dbConfig = {
   host: "localhost",
-  user: "root",
+  user: process.env.DB_USER,
   password: process.env.DB_PWD,
   database: process.env.DB_NAME,
 };
@@ -37,7 +37,7 @@ export default {
   ],
   runSlash: async (client, interaction) => {
     const isEphemeral = interaction.options.getString("ephemeral");
-
+    let connection = await mysql.createConnection(dbConfig);
     let statuts;
     if (isEphemeral === "false") {
       statuts = false;
@@ -48,7 +48,19 @@ export default {
     await interaction.deferReply({ flags: statuts ? 64 : 0 });
 
     console.log(interaction.user);
-    const nom = interaction.options.getString("name")?.toLowerCase() || interaction.user.id;
+    let nom;
+    if(interaction.options.getString("name")){
+       nom = interaction.options.getString("name")?.toLowerCase();
+    }
+    else{
+      const [rows] = await connection.execute(
+        "SELECT user_name FROM user_plannings WHERE user_id = ?",
+        [interaction.user.id]
+      );
+      console.log(rows);
+      nom = rows[0].user_name;
+    }
+    console.log(nom);
     const dateInput = interaction.options.getString("date") || "";
     const date = transfo_date(dateInput);
     if (!interaction.channel || interaction.channelId !== process.env.BOT_PLANNING_CHANNEL) {
@@ -64,9 +76,9 @@ export default {
     }
 
     // Connexion à la base de données
-    let connection;
+  
     try {
-      connection = await mysql.createConnection(dbConfig);
+     
 
       // Recherche de l'URL associée au nom
       const [rows] = await connection.execute("SELECT planning_url FROM user_plannings WHERE user_name = ?", [nom]);

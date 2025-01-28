@@ -1,11 +1,11 @@
 import mysql from "mysql2/promise";
 
 const dbConfig = {
-    host: "localhost", // Adresse de votre serveur MySQL
-    user: "root",      // Utilisateur MySQL
-    password: process.env.DB_PWD, // Mot de passe
-    database: process.env.DB_NAME, // Nom de la base de données
-};
+    host: "localhost",
+    user: process.env.DB_USER,
+    password: process.env.DB_PWD,
+    database: process.env.DB_NAME,
+  };
 
 export default {
     name: "addplanning",
@@ -27,14 +27,14 @@ export default {
 
     runSlash: async (client, interaction) => {
         const userId = interaction.user.id; // ID de l'utilisateur Discord
-        const icalLink = interaction.options.getString("ical"); // Lien iCal
-        const userName = interaction.options.getString("nom"); // Nom de la personne
+        let icalLink = interaction.options.getString("ical"); // Lien iCal
+        const userName = interaction.options.getString("nom").toLowerCase(); // Nom de la personne
 
         try {
             // Connexion à la base de données
             const connection = await mysql.createConnection(dbConfig);
-            if (url.startsWith("webcal://")) {
-                url = url.replace("webcal://", "https://");
+            if (icalLink.startsWith("webcal://")) {
+                icalLink = icalLink.replace("webcal://", "https://");
             }
 
 
