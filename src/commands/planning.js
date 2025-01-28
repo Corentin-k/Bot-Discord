@@ -70,6 +70,7 @@ export default {
     if (!interaction.channel || interaction.channelId !== process.env.BOT_PLANNING_CHANNEL) {
       return interaction.editReply({
         content: "Vous ne pouvez pas utiliser cette commande dans ce salon !",
+        flags:  0
       });
     }
 
@@ -77,6 +78,7 @@ export default {
     if (verifier_date(date) === "false") {
       return interaction.editReply({
         content: `${date} est une date invalide. Format attendu : AAAA-MM-JJ.`,
+        flags:  0
       });
     }
 
@@ -91,7 +93,8 @@ export default {
       if (rows.length === 0) {
         return interaction.editReply({
           content: `Aucune URL de planning trouvée pour ${nom}. Veuillez vérifier le nom ou ajouter une URL avec /addPlanning.`,
-         
+          flags:  0
+          
         });
       }
       console.log(rows)
@@ -104,6 +107,7 @@ export default {
       if (coursDuJour.length === 0) {
         return interaction.editReply({
           content: `${nom} n'a pas de cours le ${date} 🎉`,
+          flags:  0
   
         });
       }
@@ -129,6 +133,7 @@ export default {
       console.error("Erreur lors de l'accès à la base de données ou au planning :", error);
       return interaction.editReply({
         content: "Une erreur est survenue lors de la récupération du planning. Veuillez réessayer plus tard.",
+        flags:  0
       
       });
     } finally {
