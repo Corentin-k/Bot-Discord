@@ -24,7 +24,7 @@ export default {
                 "**/planning** : permet de récupérer le planning d'une personne.\n\n" +
                 "**/addPlanning** : ajoutez votre planning à la commande.\n\n" +
                 "**/addEvent** : ajoutez un événement et programmez un rappel automatique (jour J et une semaine avant).\n\n" +
-                "👉 Tapez `/help <nom de la commande>` pour en savoir plus.";
+                " Tapez `/help <nom de la commande>` pour en savoir plus.";
         } else {
             // Informations spécifiques sur une commande
             switch (name_command.toLowerCase()) {
